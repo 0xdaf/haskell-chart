@@ -32,10 +32,14 @@ import System.IO.Unsafe(unsafePerformIO)
 
 --- do action m for any keypress (except modified keys)
 anyKey :: IO () -> G.EventM G.EKey Bool
-anyKey m = do
-    mods <- G.eventModifier
-    liftIO $ when (null mods) m
-    return True
+anyKey m = G.tryEvent $ do
+    -- Unfortunately, gtk2hs doesn't currently expose
+    -- EventKey.is_modifier, and eventModifier doesn't include the
+    -- current key if it is a modifier, so resort to seeing if the key
+    -- has no character representation, which is roughly the same
+    -- except that it gives a false positive for e.g. arrow keys
+    (Just _) <- G.keyToChar `fmap` G.eventKeyVal
+    liftIO m
 
 -- Yuck. But we really want the convenience function
 -- renderableToWindow as to be callable without requiring
