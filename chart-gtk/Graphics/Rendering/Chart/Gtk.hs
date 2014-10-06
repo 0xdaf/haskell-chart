@@ -12,21 +12,14 @@ module Graphics.Rendering.Chart.Gtk(
     ) where
 
 import qualified Graphics.UI.Gtk as G
-import qualified Graphics.UI.Gtk.Gdk.Events as GE
 import qualified Graphics.Rendering.Cairo as C
 
 import Graphics.Rendering.Chart
-import Graphics.Rendering.Chart.Renderable
-import Graphics.Rendering.Chart.Geometry
-import Graphics.Rendering.Chart.Drawing
 import Graphics.Rendering.Chart.Backend.Cairo
 import Graphics.Rendering.Chart.State(EC, execEC)
 
-import Data.List (isPrefixOf)
-import Data.IORef
 import Data.Default.Class
 
-import Control.Monad(when)
 import Control.Monad.Trans (liftIO)
 
 --- do action m for any keypress (except modified keys)
