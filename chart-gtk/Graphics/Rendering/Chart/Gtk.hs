@@ -28,7 +28,6 @@ import Data.Default.Class
 
 import Control.Monad(when)
 import Control.Monad.Trans (liftIO)
-import System.IO.Unsafe(unsafePerformIO)
 
 --- do action m for any keypress (except modified keys)
 anyKey :: IO () -> G.EventM G.EKey Bool
@@ -41,22 +40,6 @@ anyKey m = G.tryEvent $ do
     (Just _) <- G.keyToChar `fmap` G.eventKeyVal
     liftIO m
 
--- Yuck. But we really want the convenience function
--- renderableToWindow as to be callable without requiring
--- initGUI to be called first. But newer versions of
--- gtk insist that initGUI is only called once
-guiInitVar :: IORef Bool
-{-# NOINLINE guiInitVar #-}
-guiInitVar = unsafePerformIO (newIORef False)
-
-initGuiOnce :: IO ()
-initGuiOnce = do
-    v <- readIORef guiInitVar
-    when (not v) $ do
-        -- G.initGUI
-        G.unsafeInitGUIForThreadedRTS
-        writeIORef guiInitVar True
-
 -- | Display a renderable in a gtk window.
 --
 -- Note that this is a convenience function that initialises GTK on
@@ -65,7 +48,7 @@ initGuiOnce = do
 -- that case use createRenderableWindow.
 renderableToWindow :: Renderable a -> Int -> Int -> IO ()
 renderableToWindow chart windowWidth windowHeight = do
-    initGuiOnce
+    G.initGUI
     window <- createRenderableWindow chart windowWidth windowHeight
     -- press any key to exit the loop
     G.on window G.keyPressEvent $ anyKey $ do
