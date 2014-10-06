@@ -27,13 +27,15 @@ import Data.IORef
 import Data.Default.Class
 
 import Control.Monad(when)
+import Control.Monad.Trans (liftIO)
 import System.IO.Unsafe(unsafePerformIO)
 
-
--- do action m for any keypress (except modified keys)
-anyKey :: (Monad m) => m a -> GE.Event -> m Bool
-anyKey m (GE.Key {GE.eventModifier=[]}) = m >> return True
-anyKey _ _ = return True
+--- do action m for any keypress (except modified keys)
+anyKey :: IO () -> G.EventM G.EKey Bool
+anyKey m = do
+    mods <- G.eventModifier
+    liftIO $ when (null mods) m
+    return True
 
 -- Yuck. But we really want the convenience function
 -- renderableToWindow as to be callable without requiring
@@ -62,8 +64,8 @@ renderableToWindow chart windowWidth windowHeight = do
     initGuiOnce
     window <- createRenderableWindow chart windowWidth windowHeight
     -- press any key to exit the loop
-    G.onKeyPress window $ anyKey (G.widgetDestroy window)
-    G.onDestroy window G.mainQuit
+    G.on window G.keyPressEvent $ anyKey (G.widgetDestroy window)
+    G.on window G.destroyEvent $ liftIO $ G.mainQuit >> return True
     G.widgetShowAll window
     G.mainGUI
 
@@ -80,18 +82,15 @@ createRenderableWindow chart windowWidth windowHeight = do
     window <- G.windowNew
     canvas <- G.drawingAreaNew
     G.widgetSetSizeRequest window windowWidth windowHeight
-    G.onExpose canvas $ const (updateCanvas chart canvas)
+    G.on canvas G.draw $ updateCanvas chart canvas
     G.set window [G.containerChild G.:= canvas]
     return window
 
 
-updateCanvas :: Renderable a -> G.DrawingArea  -> IO Bool
+updateCanvas :: Renderable a -> G.DrawingArea  -> C.Render ()
 updateCanvas chart canvas = do
-    win <- G.widgetGetDrawWindow canvas
-    (width, height) <- G.widgetGetSize canvas
-    regio <- G.regionRectangle $ GE.Rectangle 0 0 width height
+    width <- liftIO $ G.widgetGetAllocatedWidth canvas
+    height <- liftIO $ G.widgetGetAllocatedHeight canvas
     let sz = (fromIntegral width,fromIntegral height)
-    G.drawWindowBeginPaintRegion win regio
-    G.renderWithDrawable win $ runBackend (defaultEnv bitmapAlignmentFns) (render chart sz) 
-    G.drawWindowEndPaint win
-    return True
+    runBackend (defaultEnv bitmapAlignmentFns) (render chart sz)
+    return ()

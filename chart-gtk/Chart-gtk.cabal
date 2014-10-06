@@ -20,7 +20,7 @@ library
                , data-default-class < 0.1
                , colour >= 2.2.1 && < 2.4
                , colour >= 2.2.1
-               , gtk >= 0.9.11
+               , gtk3
                , Chart >= 1.3 && < 1.4
                , Chart-cairo >= 1.3 && < 1.4
 
