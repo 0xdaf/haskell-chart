@@ -68,8 +68,10 @@ renderableToWindow chart windowWidth windowHeight = do
     initGuiOnce
     window <- createRenderableWindow chart windowWidth windowHeight
     -- press any key to exit the loop
-    G.on window G.keyPressEvent $ anyKey (G.widgetDestroy window)
-    G.on window G.destroyEvent $ liftIO $ G.mainQuit >> return True
+    G.on window G.keyPressEvent $ anyKey $ do
+      G.widgetDestroy window
+      G.mainQuit
+    G.on window G.deleteEvent $ liftIO G.mainQuit >> return False
     G.widgetShowAll window
     G.mainGUI
 
